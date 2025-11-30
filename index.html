@@ -153,7 +153,6 @@
             margin-top: 8px;
             font-size: 14px;
             line-height: 1.5;
-            white-space: pre-line;
         }
 
         #loadingScreen {
@@ -195,14 +194,14 @@
     </div>
 
     <!-- Phone + amount -->
-    <input id="phone" placeholder="رقم الهاتف (ابدأ من 0 بدون +)" inputmode="numeric" />
+    <input id="phone" placeholder="رقم الهاتف (بدون 0)" inputmode="numeric" />
     <input id="amount" placeholder="المبلغ (مثال: 5000)" inputmode="numeric" oninput="updateInfo()" />
 
     <div id="infoBox"></div>
 
     <button onclick="sendOrder()" id="sendBtn">إرسال الطلب</button>
 
-    <div id="loadingScreen">⏳ جاري تجهيز الطلب...</div>
+    <div id="loadingScreen">⏳ جاري معالجة الطلب...</div>
     <div id="thanks">شكراً لطلبك من دكان الكريديت! ❤️</div>
 </div>
 
@@ -211,20 +210,18 @@
     let operator = "";
     let dark = false;
 
-    const waNumber = "249126181627"; // YOUR WHATSAPP BUSINESS NUMBER
-
     function toggleLang() {
         lang = (lang === "ar") ? "en" : "ar";
 
         if (lang === "ar") {
             document.getElementById("title").innerText = "دكان الكريديت";
-            document.getElementById("phone").placeholder = "رقم الهاتف (ابدأ من 0 بدون +)";
+            document.getElementById("phone").placeholder = "رقم الهاتف (بدون 0)";
             document.getElementById("amount").placeholder = "المبلغ (مثال: 5000)";
             document.getElementById("sendBtn").innerText = "إرسال الطلب";
-            updateInfo();
+            updateInfo(); // refresh text
         } else {
             document.getElementById("title").innerText = "Credit Store";
-            document.getElementById("phone").placeholder = "Phone number (start with 0, no +)";
+            document.getElementById("phone").placeholder = "Phone number (without 0)";
             document.getElementById("amount").placeholder = "Amount (e.g. 5000)";
             document.getElementById("sendBtn").innerText = "Send Order";
             updateInfo();
@@ -243,7 +240,7 @@
         updateInfo();
     }
 
-    // 80% customer credit, 20% profit, rounded to nearest 100
+    // simple 20% profit + 80% credit info
     function updateInfo() {
         const amountValue = parseInt(document.getElementById("amount").value || "0", 10);
         const infoBox = document.getElementById("infoBox");
@@ -252,16 +249,16 @@
             return;
         }
 
-        const credit = Math.round(amountValue * 0.8 / 100) * 100; // 80% rounded
+        const credit = Math.round(amountValue * 0.8 / 100) * 100; // 80% rounded to nearest 100
         const profit = amountValue - credit;
 
         let opText = "";
         if (operator === "Zain") {
-            opText = (lang === "ar") ? "زين — الرقم يبدأ بـ 09" : "Zain — number starts with 09";
+            opText = (lang === "ar") ? "زين (ابدأ الرقم بـ 09)" : "Zain (start with 09)";
         } else if (operator === "Sudani") {
-            opText = (lang === "ar") ? "سوداني — الرقم يبدأ بـ 01" : "Sudani — number starts with 01";
+            opText = (lang === "ar") ? "سوداني (ابدأ الرقم بـ 01)" : "Sudani (start with 01)";
         } else if (operator === "MTN") {
-            opText = (lang === "ar") ? "إم تي إن — الرقم يبدأ بـ 09" : "MTN — number starts with 09";
+            opText = (lang === "ar") ? "إم تي إن (ابدأ الرقم بـ 09)" : "MTN (start with 09)";
         }
 
         if (lang === "ar") {
@@ -281,7 +278,7 @@
 
     function sendOrder() {
         const phone = document.getElementById("phone").value.trim();
-        const amountStr = document.getElementById("amount").value.trim();
+        const amount = document.getElementById("amount").value.trim();
 
         if (!operator) {
             alert(lang === "ar" ? "اختر المشغل أولاً" : "Please select operator first");
@@ -291,14 +288,14 @@
             alert(lang === "ar" ? "أدخل رقم الهاتف" : "Enter phone number");
             return;
         }
-        if (!amountStr) {
+        if (!amount) {
             alert(lang === "ar" ? "أدخل المبلغ" : "Enter amount");
             return;
         }
 
-        const amount = parseInt(amountStr, 10);
-        const credit = Math.round(amount * 0.8 / 100) * 100;
-        const profit = amount - credit;
+        const amountNum = parseInt(amount, 10);
+        const credit = Math.round(amountNum * 0.8 / 100) * 100;
+        const profit = amountNum - credit;
 
         const opArabic =
             operator === "Zain" ? "زين" :
@@ -308,16 +305,15 @@
         const opEnglish = operator;
 
         const msg =
-`⭐ طلب جديد من دكان الكريديت (Credit Store)
+`⭐ طلب جديد من دكان الكريديت | Credit Store
 
 المشغل: ${opArabic} (${opEnglish})
 رقم العميل: ${phone}
-المبلغ المطلوب: ${amount} SDG
+المبلغ المدفوع: ${amountNum} SDG
 الرصيد المتوقع للعميل: ${credit} SDG
 الربح التقريبي: ${profit} SDG
 
-هذه رسالة طلب دفع (Payment Request).
-✅ الرجاء إرسال صورة التحويل من بنكك / MyCashi لتأكيد الدفع.`;
+✅ يرجى إرسال صورة التحويل لتأكيد الدفع.`;
 
         // show loading then redirect to WhatsApp
         document.getElementById("loadingScreen").style.display = "block";
@@ -327,6 +323,8 @@
             document.getElementById("loadingScreen").style.display = "none";
             document.getElementById("thanks").style.display = "block";
 
+            // your WhatsApp Business number in wa.me format
+            const waNumber = "249126181627";
             const url = `https://wa.me/${waNumber}?text=${encodeURIComponent(msg)}`;
             window.location.href = url;
         }, 1500);
@@ -334,4 +332,4 @@
 </script>
 
 </body>
-        </html>
+</html>
